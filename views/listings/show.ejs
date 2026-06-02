@@ -71,10 +71,10 @@
 
         
 
-    <% if(listing.reviews.lenght > 0 ) { %>
+    <% if(listing.reviews && listing.reviews.length > 0 ) { %>
     <div class="row">
         <p><b>All Reviews</b></p>
-    <% for(review of listing.reviews){ %>
+    <% for(let review of listing.reviews){ %>
         <div class="card col-5 ms-3 mb-3">
             <div class="card-body">
                 <h5 class="card-title">@<%= review.author.username %></h5>
