@@ -100,5 +100,11 @@
     </div>
  </div>
 
+ <!-- JS vars for Map -->
+<script>
+    const listingLocation = <%- JSON.stringify(listing.location || '') %>;
+    const listingTitle = <%- JSON.stringify(listing.title || 'Listing location') %>;
+</script>
+
  <!-- JS for Map -->
 <script src="/js/map.js"></script>
