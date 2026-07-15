@@ -1,0 +1,245 @@
+<% layout("./layouts/boilerplate") %>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12 text-center mb-4">
+            <h2 class="display-5 font-weight-bold" style="color: #222;">Dashboard</h2>
+            <p class="text-muted">Manage your booked travels and reservations made on your properties.</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap Nav Tabs -->
+    <ul class="nav nav-tabs justify-content-center mb-4 border-bottom-0" id="bookingTab" role="tablist" style="gap: 10px;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active px-4 py-2 rounded-pill shadow-sm border" id="trips-tab" data-bs-toggle="tab" data-bs-target="#trips" type="button" role="tab" aria-controls="trips" aria-selected="true" style="font-weight: 600;">
+                <i class="fa-solid fa-plane-departure me-2"></i>My Trips
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link px-4 py-2 rounded-pill shadow-sm border" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests" type="button" role="tab" aria-controls="requests" aria-selected="false" style="font-weight: 600;">
+                <i class="fa-solid fa-bell me-2"></i>Booking Requests
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-4" id="bookingTabContent">
+        <!-- 1. My Trips (Bookings made by the user) -->
+        <div class="tab-pane fade show active" id="trips" role="tabpanel" aria-labelledby="trips-tab">
+            <% if (bookings && bookings.length > 0) { %>
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <% for (let booking of bookings) { %>
+                            <% if (booking.listing) { %>
+                                <div class="card mb-4 shadow-sm border-0 rounded-4 overflow-hidden position-relative">
+                                    <% if (booking.status === "rejected") { %>
+                                        <form action="/bookings/<%= booking._id %>?_method=DELETE" method="POST" class="position-absolute top-0 end-0 m-3" style="z-index: 10;" onsubmit="return confirm('Remove this cancelled request from your history?');">
+                                            <button type="submit" class="btn btn-sm btn-light border rounded-circle shadow-sm" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;" aria-label="Remove reservation" title="Remove from list">
+                                                <i class="fa-solid fa-xmark text-muted"></i>
+                                            </button>
+                                        </form>
+                                    <% } %>
+                                    <div class="row g-0">
+                                        <div class="col-md-4 position-relative">
+                                            <img src="<%= booking.listing.image.url %>" class="img-fluid w-100 h-100 object-fit-cover" alt="<%= booking.listing.title %>" style="min-height: 200px; max-height: 250px;">
+                                        </div>
+                                        <div class="col-md-8 d-flex flex-column justify-content-between p-4">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <h4 class="card-title mb-1">
+                                                        <a href="/listings/<%= booking.listing._id %>" class="text-decoration-none text-dark hover-danger">
+                                                            <%= booking.listing.title %>
+                                                        </a>
+                                                    </h4>
+                                                    <% if (booking.status === "pending") { %>
+                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Pending Approval</span>
+                                                    <% } else if (booking.status === "accepted") { %>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Confirmed</span>
+                                                    <% } else if (booking.status === "rejected") { %>
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Cancelled / Rejected</span>
+                                                    <% } %>
+                                                </div>
+                                                <p class="text-muted mb-2"><i class="fa-solid fa-location-dot me-1"></i> <%= booking.listing.location %>, <%= booking.listing.country %></p>
+                                                <p class="text-muted small mb-2"><i class="fa-regular fa-clock me-1"></i> Booked on: <%= booking.createdAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) %></p>
+                                                
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-sm-6">
+                                                        <div class="p-2 bg-light rounded-3">
+                                                            <small class="text-muted d-block">CHECK-IN</small>
+                                                            <strong class="text-dark"><%= booking.startDate.toDateString() %></strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <div class="p-2 bg-light rounded-3">
+                                                            <small class="text-muted d-block">CHECK-OUT</small>
+                                                            <strong class="text-dark"><%= booking.endDate.toDateString() %></strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <p class="mb-0 text-dark">
+                                                    <i class="fa-solid fa-users me-1 text-muted"></i> <strong><%= booking.guests %></strong> <%= booking.guests > 1 ? 'guests' : 'guest' %>
+                                                </p>
+                                                <% if (booking.message) { %>
+                                                    <div class="p-3 mt-3 <%= booking.status === 'accepted' ? 'bg-success-subtle border-start border-4 border-success text-success-emphasis' : 'bg-danger-subtle border-start border-4 border-danger text-danger-emphasis' %> rounded">
+                                                        <i class="fa-solid <%= booking.status === 'accepted' ? 'fa-circle-check' : 'fa-circle-xmark' %> me-2"></i>
+                                                        <%= booking.message %>
+                                                    </div>
+                                                <% } %>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                                <div>
+                                                    <span class="text-muted small">Total Cost</span>
+                                                    <h4 class="mb-0 text-dark font-weight-bold">&#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %></h4>
+                                                </div>
+                                                <% if (booking.status !== "rejected") { %>
+                                                    <form action="/bookings/<%= booking._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                                        <button class="btn btn-outline-danger px-4 rounded-pill">Cancel Reservation</button>
+                                                    </form>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+                        <% } %>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="row justify-content-center mt-4">
+                    <div class="col-md-8 text-center py-5 bg-light rounded-4">
+                        <div class="mb-3">
+                            <i class="fa-solid fa-plane-departure fa-3x text-muted opacity-50"></i>
+                        </div>
+                        <h4 class="text-dark">No trips booked yet!</h4>
+                        <p class="text-muted mb-4">Explore listings and start planning your next getaway.</p>
+                        <a href="/listings" class="btn btn-danger px-4 py-2 rounded-pill" style="background-color: #fe424d; border-color: #fe424d;">Start Exploring</a>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- 2. Booking Requests (Bookings made on listings owned by the user) -->
+        <div class="tab-pane fade" id="requests" role="tabpanel" aria-labelledby="requests-tab">
+            <% if (bookingRequests && bookingRequests.length > 0) { %>
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <% for (let request of bookingRequests) { %>
+                            <% if (request.listing) { %>
+                                <div class="card mb-4 shadow-sm border-0 rounded-4 overflow-hidden position-relative">
+                                    <% if (request.status === "rejected") { %>
+                                        <form action="/bookings/<%= request._id %>?_method=DELETE" method="POST" class="position-absolute top-0 end-0 m-3" style="z-index: 10;" onsubmit="return confirm('Remove this rejected request from your view?');">
+                                            <button type="submit" class="btn btn-sm btn-light border rounded-circle shadow-sm" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;" aria-label="Remove request" title="Remove from list">
+                                                <i class="fa-solid fa-xmark text-muted"></i>
+                                            </button>
+                                        </form>
+                                    <% } %>
+                                    <div class="row g-0">
+                                        <div class="col-md-4 position-relative">
+                                            <img src="<%= request.listing.image.url %>" class="img-fluid w-100 h-100 object-fit-cover" alt="<%= request.listing.title %>" style="min-height: 200px; max-height: 250px;">
+                                        </div>
+                                        <div class="col-md-8 d-flex flex-column justify-content-between p-4">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <h4 class="card-title mb-1">
+                                                        <a href="/listings/<%= request.listing._id %>" class="text-decoration-none text-dark hover-danger">
+                                                            <%= request.listing.title %>
+                                                        </a>
+                                                    </h4>
+                                                    <% if (request.status === "pending") { %>
+                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Pending Approval</span>
+                                                    <% } else if (request.status === "accepted") { %>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Accepted</span>
+                                                    <% } else if (request.status === "rejected") { %>
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Rejected</span>
+                                                    <% } %>
+                                                </div>
+                                                <p class="text-muted mb-1"><i class="fa-solid fa-location-dot me-1"></i> <%= request.listing.location %>, <%= request.listing.country %></p>
+                                                <p class="text-muted small mb-2"><i class="fa-regular fa-clock me-1"></i> Requested on: <%= request.createdAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) %></p>
+                                                
+                                                <p class="text-dark mb-3">
+                                                    <i class="fa-solid fa-user me-1 text-muted"></i> Booked by: <strong>@<%= request.user.username %></strong> (<%= request.user.email %>)
+                                                </p>
+                                                
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-sm-6">
+                                                        <div class="p-2 bg-light rounded-3">
+                                                            <small class="text-muted d-block">CHECK-IN</small>
+                                                            <strong class="text-dark"><%= request.startDate.toDateString() %></strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <div class="p-2 bg-light rounded-3">
+                                                            <small class="text-muted d-block">CHECK-OUT</small>
+                                                            <strong class="text-dark"><%= request.endDate.toDateString() %></strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <p class="mb-0 text-dark">
+                                                    <i class="fa-solid fa-users me-1 text-muted"></i> <strong><%= request.guests %></strong> <%= request.guests > 1 ? 'guests' : 'guest' %>
+                                                </p>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                                <div>
+                                                    <span class="text-muted small">Total Payout</span>
+                                                    <h4 class="mb-0 text-dark font-weight-bold">&#x20B9;<%= request.totalPrice.toLocaleString("en-IN") %></h4>
+                                                </div>
+                                                <% if (request.status === "pending") { %>
+                                                    <div class="d-flex gap-2">
+                                                        <form action="/bookings/<%= request._id %>/accept" method="POST">
+                                                            <button class="btn btn-success px-4 rounded-pill">Accept</button>
+                                                        </form>
+                                                        <form action="/bookings/<%= request._id %>/reject" method="POST" onsubmit="return confirm('Are you sure you want to reject this booking request?');">
+                                                            <button class="btn btn-danger px-4 rounded-pill">Reject</button>
+                                                        </form>
+                                                    </div>
+                                                <% } else if (request.status === "accepted") { %>
+                                                    <form action="/bookings/<%= request._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                                                        <button class="btn btn-outline-danger px-4 rounded-pill">Decline Reservation</button>
+                                                    </form>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+                        <% } %>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="row justify-content-center mt-4">
+                    <div class="col-md-8 text-center py-5 bg-light rounded-4">
+                        <div class="mb-3">
+                            <i class="fa-solid fa-bell-slash fa-3x text-muted opacity-50"></i>
+                        </div>
+                        <h4 class="text-dark">No booking requests received yet!</h4>
+                        <p class="text-muted">When guests book your properties, their reservation details will appear here.</p>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-danger:hover {
+        color: #fe424d !important;
+    }
+    .object-fit-cover {
+        object-fit: cover;
+    }
+    .nav-tabs .nav-link {
+        color: #555;
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+    .nav-tabs .nav-link:hover {
+        background-color: #f8f9fa;
+        color: #fe424d;
+        border-color: #dee2e6;
+    }
+    .nav-tabs .nav-link.active {
+        color: white !important;
+        background-color: #fe424d !important;
+        border-color: #fe424d !important;
+    }
+</style>

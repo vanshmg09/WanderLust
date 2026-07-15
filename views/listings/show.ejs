@@ -2,7 +2,11 @@
 <div class="row">
     <!-- Seprate coloum for heading -->
     <div class="col-8 offset-3 mt-3">
-        <h3><%= listing.title %></h3>
+        <h3><%= listing.title %>
+            <% if (typeof isBooked !== "undefined" && isBooked) { %>
+                <span class="badge bg-danger fs-6 ms-2">Booked</span>
+            <% } %>
+        </h3>
     </div>
 
     <div class="card col-6 offset-3 show-card listing-card">
@@ -32,6 +36,49 @@
 
 
     <div class="col-8 offset-3 mb-3">
+        <% if(currUser && !listing.owner._id.equals(currUser._id)) { %>
+            <hr>
+            <h4>Book this Listing</h4>
+            <form action="/listings/<%= listing._id %>/bookings" method="POST" class="needs-validation mb-3" novalidate>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="startDate" class="form-label">Check-in Date</label>
+                        <input type="date" name="booking[startDate]" id="startDate" class="form-control" required>
+                        <div class="invalid-feedback">Please select a check-in date.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="endDate" class="form-label">Check-out Date</label>
+                        <input type="date" name="booking[endDate]" id="endDate" class="form-control" required>
+                        <div class="invalid-feedback">Please select a check-out date.</div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="guests" class="form-label">Number of Guests</label>
+                    <input type="number" name="booking[guests]" id="guests" class="form-control" min="1" value="1" required>
+                    <div class="invalid-feedback">Minimum 1 guest is required.</div>
+                </div>
+                <div class="mb-3 p-3 bg-light rounded" id="price-calculation" style="display: none; border-left: 4px solid #fe424d;">
+                    <div class="d-flex justify-content-between">
+                        <span>&#x20B9;<%= listing.price.toLocaleString("en-IN") %> x <span id="num-nights">0</span> nights</span>
+                        <span><b>Total: &#x20B9;<span id="calc-total-price">0</span></b></span>
+                    </div>
+                </div>
+                <button class="btn btn-danger btn-booking w-100" style="background-color: #fe424d; border-color: #fe424d;">Reserve Now</button>
+            </form>
+        <% } else if(!currUser) { %>
+            <hr>
+            <div class="card border-0 shadow-sm rounded-4 text-center p-4 my-3 bg-light-subtle" style="border: 1px dashed #ced4da !important;">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fa-solid fa-key-skeleton fa-2x text-muted opacity-75" style="font-size: 2rem; color: #fe424d;"></i>
+                    </div>
+                    <h5 class="card-title text-dark mb-2">Planning a getaway?</h5>
+                    <p class="card-text text-muted mb-3">Sign in to check date availability, view price calculations, and book this place.</p>
+                    <a href="/login" class="btn btn-danger px-4 py-2 rounded-pill" style="background-color: #fe424d; border-color: #fe424d; font-weight: 500;">Log In to Reserve</a>
+                </div>
+            </div>
+        <% } %>
+
         <% if(currUser){ %>
         <hr>
         <h4>Leave a Review</h4>
@@ -108,3 +155,48 @@
 
  <!-- JS for Map -->
 <script src="/js/map.js"></script>
+
+<!-- JS for Booking Price Calculation -->
+<script>
+    const pricePerNight = <%= listing.price %>;
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+    const calcDiv = document.getElementById("price-calculation");
+    const nightsSpan = document.getElementById("num-nights");
+    const totalPriceSpan = document.getElementById("calc-total-price");
+
+    // Set min date of startDate to today
+    const todayStr = new Date().toISOString().split('T')[0];
+    if(startDateInput) {
+        startDateInput.min = todayStr;
+        startDateInput.addEventListener("change", function() {
+            endDateInput.min = startDateInput.value;
+            calculatePrice();
+        });
+    }
+    if(endDateInput) {
+        endDateInput.addEventListener("change", calculatePrice);
+    }
+
+    function calculatePrice() {
+        const startVal = startDateInput.value;
+        const endVal = endDateInput.value;
+        if (startVal && endVal) {
+            const start = new Date(startVal);
+            start.setHours(0,0,0,0);
+            const end = new Date(endVal);
+            end.setHours(0,0,0,0);
+            const timeDiff = end - start;
+            const nights = Math.round(timeDiff / (1000 * 60 * 60 * 24));
+            if (nights > 0) {
+                nightsSpan.innerText = nights;
+                totalPriceSpan.innerText = (nights * pricePerNight).toLocaleString("en-IN");
+                calcDiv.style.display = "block";
+            } else {
+                calcDiv.style.display = "none";
+            }
+        } else {
+            calcDiv.style.display = "none";
+        }
+    }
+</script>

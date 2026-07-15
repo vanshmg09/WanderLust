@@ -4,6 +4,7 @@ if(process.env.NODE_ENV != "production") {
 }
 
 const express = require("express");
+const { MongoStore } = require('connect-mongo');
 const app = express();
 const mongoose = require("mongoose");
 // Require Listing model
@@ -37,13 +38,17 @@ const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
 // To require User Route
 const userRouter = require("./routes/user.js");
+// To require Booking Route
+const bookingRouter = require("./routes/booking.js");
+// To require MyBookings Route
+const mybookingsRouter = require("./routes/mybookings.js");
 
 const path = require("path");
 const { readdir } = require("fs");
 const { clear } = require("console");
 const { kMaxLength } = require("buffer");
 
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
 main()
     .then(() => {
@@ -53,7 +58,7 @@ main()
     });
 
 async function main() {
-    await mongoose.connect(MONGO_URL);
+    await mongoose.connect(dbUrl);
 }
 
 app.set("view engine", "ejs");
@@ -67,9 +72,23 @@ app.engine("ejs", ejsMate);
 // To use static file (public)
 app.use(express.static(path.join(__dirname,"/public")));
 
+// Configure Mongo Session Store
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    crypto: {
+        secret: process.env.SECRET || "mysupersecretecode"
+    },
+    touchAfter: 24 * 3600, // Update session once in 24 hours unless data changes
+});
+
+store.on("error", (err) => {
+    console.log("ERROR IN MONGO SESSION STORE", err);
+});
+
 // Session Option
 const sessionOptions = {
-    secret: "mysupersecretecode",
+    store: store,
+    secret: process.env.SECRET || "mysupersecretecode",
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -135,6 +154,10 @@ app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 // To use User Route
 app.use("/", userRouter);
+// To use Booking Route
+app.use("/listings/:id/bookings", bookingRouter);
+// To use MyBookings Route
+app.use("/bookings", mybookingsRouter);
 
 
 

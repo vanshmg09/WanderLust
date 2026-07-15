@@ -2,9 +2,8 @@
 const Listing = require("./models/listing");
 // Require ExpressError
 const ExpressError = require("./utils/ExpressError.js");
-// Require listingSchema & reviewSchema for server side validation
-const { listingSchema } = require("./schema.js");
-const {reviewSchema} = require("./schema.js");
+// Require listingSchema, reviewSchema & bookingSchema for server side validation
+const { listingSchema, reviewSchema, bookingSchema } = require("./schema.js");
 // Require Review Model
 const Review = require("./models/review.js");
 
@@ -69,4 +68,15 @@ module.exports.isReviewAutor = async (req, res, next) => {
         return res.redirect(`/listings/${id}`);
     }
     next();
+}
+
+// Joi Validation for Booking
+module.exports.validateBooking = (req, res, next) => {
+    let { error } = bookingSchema.validate(req.body);
+    if (error) {
+        let errMsg = error.details.map((el) => el.message).join(",");
+        throw new ExpressError(400, errMsg);
+    } else {
+        next();
+    }
 }

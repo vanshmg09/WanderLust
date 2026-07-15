@@ -1,10 +1,19 @@
 // To require Listing model
 const Listing = require("../models/listing");
+// To require Booking model
+const Booking = require("../models/booking");
 
 // Index Route Callback
 module.exports.index = async (req, res) => {
     const allListing = await Listing.find({});
-    res.render("./listings/index.ejs", {allListing});
+    
+    // Find all active bookings (check-out is today or in the future) (ignoring rejected bookings)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const activeBookings = await Booking.find({ endDate: { $gte: today }, status: { $ne: "rejected" } });
+    const bookedListingIds = new Set(activeBookings.map(b => b.listing.toString()));
+
+    res.render("./listings/index.ejs", {allListing, bookedListingIds});
 }
 
 // New Route Callback
@@ -21,8 +30,14 @@ module.exports.showListing = async (req, res) => {
         req.flash("error", "Listing you requested for does not exist!");
         res.redirect("/listings");
     }else{
+        // Check if this listing has any active booking (ignoring rejected bookings)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const activeBooking = await Booking.findOne({ listing: id, endDate: { $gte: today }, status: { $ne: "rejected" } });
+        const isBooked = !!activeBooking;
+
         console.log(listing);
-        res.render("./listings/show.ejs", {listing});
+        res.render("./listings/show.ejs", {listing, isBooked});
     }
     
 }
