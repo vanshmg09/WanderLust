@@ -12,7 +12,8 @@ body{
 }
 
 .navbar{
-    height: 5rem;
+    min-height: 5rem;
+    height: auto;
     background-color: white;
 }
 
@@ -124,5 +125,5 @@ body{
 /* Map Css */
 #map { 
     height: 400px;
-    width: 88vh;
+    width: 100%;
  }
