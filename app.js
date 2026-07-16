@@ -132,6 +132,18 @@ app.get("/", (req, res) => {
     res.redirect("/listings");
 });
 
+app.get("/db-debug", async (req, res) => {
+    try {
+        const count = await mongoose.model('Listing').countDocuments({});
+        res.json({
+            connectedUrl: dbUrl.replace(/:([^:@]+)@/, ":xxxx@"), // Hide password
+            listingsCount: count
+        });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // app.get("/testListing", async (req, res) => {
 //     let sampleListing = new Listing({
 //         title : "My new Villa",
